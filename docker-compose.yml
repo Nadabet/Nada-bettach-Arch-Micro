@@ -1,0 +1,96 @@
+# Docker Compose for Local Development
+
+version: '3.8'
+
+services:
+  discovery-service:
+    image: openjdk:17-jdk-slim
+    container_name: discovery-service
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_APPLICATION_NAME=discovery-service
+    command: java -jar discovery-service.jar
+
+  config-service:
+    image: openjdk:17-jdk-slim
+    container_name: config-service
+    ports:
+      - "8888:8888"
+    depends_on:
+      - discovery-service
+    environment:
+      - SPRING_APPLICATION_NAME=config-service
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
+    command: java -jar config-service.jar
+
+  customer-service:
+    image: openjdk:17-jdk-slim
+    container_name: customer-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - discovery-service
+      - config-service
+    environment:
+      - SPRING_APPLICATION_NAME=customer-service
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
+    command: java -jar customer-service.jar
+
+  inventory-service:
+    image: openjdk:17-jdk-slim
+    container_name: inventory-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - discovery-service
+      - config-service
+    environment:
+      - SPRING_APPLICATION_NAME=inventory-service
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
+    command: java -jar inventory-service.jar
+
+  billing-service:
+    image: openjdk:17-jdk-slim
+    container_name: billing-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      - discovery-service
+      - config-service
+      - customer-service
+      - inventory-service
+    environment:
+      - SPRING_APPLICATION_NAME=billing-service
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
+    command: java -jar billing-service.jar
+
+  authentication-service:
+    image: openjdk:17-jdk-slim
+    container_name: authentication-service
+    ports:
+      - "8084:8084"
+    depends_on:
+      - discovery-service
+      - config-service
+    environment:
+      - SPRING_APPLICATION_NAME=authentication-service
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
+    command: java -jar authentication-service.jar
+
+  api-gateway:
+    image: openjdk:17-jdk-slim
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - discovery-service
+      - config-service
+      - customer-service
+      - inventory-service
+      - billing-service
+    environment:
+      - SPRING_APPLICATION_NAME=api-gateway
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
+    command: java -jar gateway.jar
+
